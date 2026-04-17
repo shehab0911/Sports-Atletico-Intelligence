@@ -1,5 +1,10 @@
-const API_BASE = "http://127.0.0.1:8000";
-const ACTIVE_STATUSES = new Set(["queued", "extracting_clip", "awaiting_frame_selection", "ai_analyzing"]);
+const API_BASE = "https://prototype-test-production.up.railway.app";
+const ACTIVE_STATUSES = new Set([
+  "queued",
+  "extracting_clip",
+  "awaiting_frame_selection",
+  "ai_analyzing",
+]);
 let currentRole = null;
 let currentTeamId = null;
 let selectedIncidentId = null;
@@ -46,8 +51,22 @@ const screenIds = [
 
 const navByRole = {
   team_viewer: ["dashboard", "match-history", "incidents", "incident-detail"],
-  match_official: ["dashboard", "live-console", "incidents", "incident-detail", "match-history"],
-  league_admin: ["dashboard", "team-list", "leagues", "live-console", "incidents", "incident-detail", "match-history"],
+  match_official: [
+    "dashboard",
+    "live-console",
+    "incidents",
+    "incident-detail",
+    "match-history",
+  ],
+  league_admin: [
+    "dashboard",
+    "team-list",
+    "leagues",
+    "live-console",
+    "incidents",
+    "incident-detail",
+    "match-history",
+  ],
 };
 
 const label = {
@@ -66,7 +85,9 @@ offsideBtn.addEventListener("click", () => createIncident("offside"));
 goalBtn.addEventListener("click", () => createIncident("goal"));
 autoGoalBtn.addEventListener("click", autoDetectGoal);
 filterAllBtn.addEventListener("click", () => applyIncidentFilter("all"));
-filterOffsideBtn.addEventListener("click", () => applyIncidentFilter("offside"));
+filterOffsideBtn.addEventListener("click", () =>
+  applyIncidentFilter("offside"),
+);
 filterGoalBtn.addEventListener("click", () => applyIncidentFilter("goal"));
 liveScrubber.addEventListener("input", () => {
   const t = Number(liveScrubber.value);
@@ -132,7 +153,10 @@ async function login() {
 async function saveMatch() {
   const payload = await request(`/api/matches/${getMatchId()}`, "POST", {
     source_type: videoSourceInput.value,
-    source_label: videoSourceInput.value === "live" ? "rtmp://camera/live" : "uploaded_video.mp4",
+    source_label:
+      videoSourceInput.value === "live"
+        ? "rtmp://camera/live"
+        : "uploaded_video.mp4",
   });
   matchInfo.textContent = `${payload.id} (${payload.source_type})`;
   renderHistory();
@@ -141,10 +165,14 @@ async function saveMatch() {
 async function createIncident(type) {
   if (!canEdit()) return;
   try {
-    const incident = await request(`/api/matches/${getMatchId()}/incidents`, "POST", {
-      type,
-      event_ts: Number(eventTsInput.value || 0),
-    });
+    const incident = await request(
+      `/api/matches/${getMatchId()}/incidents`,
+      "POST",
+      {
+        type,
+        event_ts: Number(eventTsInput.value || 0),
+      },
+    );
     if (type === "offside") {
       await request(`/api/incidents/${incident.id}/review-frame`, "POST", {
         frame_ts: Number(frameTsInput.value || 0),
@@ -185,12 +213,18 @@ function renderIncidents() {
   const filtered =
     currentIncidentFilter === "all"
       ? incidentCache
-      : incidentCache.filter((incident) => incident.type === currentIncidentFilter);
+      : incidentCache.filter(
+          (incident) => incident.type === currentIncidentFilter,
+        );
 
   listEl.innerHTML = "";
   filtered.forEach((incident) => {
     const confidenceLabel =
-      incident.confidence >= 0.8 ? "High" : incident.confidence >= 0.6 ? "Medium" : "Low";
+      incident.confidence >= 0.8
+        ? "High"
+        : incident.confidence >= 0.6
+          ? "Medium"
+          : "Low";
     const li = document.createElement("li");
     li.innerHTML = `
       <strong>${incident.type.toUpperCase()}</strong> ${Math.round(incident.event_ts)}s - ${incident.verdict}
@@ -275,7 +309,9 @@ function renderDetail(incident) {
   }
   document.getElementById("saveNoteBtn").onclick = async () => {
     try {
-      await request(`/api/incidents/${incident.id}/note`, "PATCH", { note: document.getElementById("note").value });
+      await request(`/api/incidents/${incident.id}/note`, "PATCH", {
+        note: document.getElementById("note").value,
+      });
       await refreshIncidents();
     } catch (error) {
       alert(error.message);
@@ -302,9 +338,13 @@ function applyIncidentFilter(filterType) {
 
 function renderDashboardKpis() {
   const matches = new Set(incidentCache.map((i) => i.match_id)).size;
-  const open = incidentCache.filter((i) => ACTIVE_STATUSES.has(i.status)).length;
+  const open = incidentCache.filter((i) =>
+    ACTIVE_STATUSES.has(i.status),
+  ).length;
   document.getElementById("kpiMatches").textContent = String(matches);
-  document.getElementById("kpiIncidents").textContent = String(incidentCache.length);
+  document.getElementById("kpiIncidents").textContent = String(
+    incidentCache.length,
+  );
   document.getElementById("kpiOpen").textContent = String(open);
 }
 
