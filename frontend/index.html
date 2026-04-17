@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Atletico Intelligence Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="loginOverlay" class="overlay">
+      <div class="auth-card">
+        <h1>Atletico Intelligence</h1>
+        <p>Sign in to match review console</p>
+        <label for="roleSelect">Select Role</label>
+        <select id="roleSelect">
+          <option value="league_admin">League Admin</option>
+          <option value="match_official" selected>Match Official</option>
+          <option value="team_viewer">Team Viewer</option>
+        </select>
+        <button id="loginBtn">Sign in to Console</button>
+      </div>
+    </div>
+
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">Atletico Intelligence</div>
+        <div id="sessionInfo" class="session">Not logged in</div>
+        <nav id="navList" class="nav-list"></nav>
+      </aside>
+
+      <div class="main-pane">
+        <header class="topbar">
+          <h2 id="pageTitle">Dashboard</h2>
+          <div class="top-actions">
+            <span id="matchInfo">Match not initialized.</span>
+          </div>
+        </header>
+
+        <main id="screenContainer" class="screen-container">
+          <section id="screen-dashboard" class="screen">
+            <div class="cards3">
+              <div class="card"><h3>Matches with clips</h3><p id="kpiMatches">0</p></div>
+              <div class="card"><h3>Available incidents</h3><p id="kpiIncidents">0</p></div>
+              <div class="card"><h3>Open reviews</h3><p id="kpiOpen">0</p></div>
+            </div>
+          </section>
+
+          <section id="screen-match-history" class="screen hidden">
+            <div class="panel">
+              <h3>Match history</h3>
+              <table class="table">
+                <thead><tr><th>Date</th><th>Fixture</th><th>Status</th><th>Clips</th></tr></thead>
+                <tbody id="historyTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="screen-live-console" class="screen hidden">
+            <div class="cards2">
+              <div class="panel">
+                <h3>Live Video Preview</h3>
+                <video id="livePreviewVideo" controls width="100%">
+                  <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
+                </video>
+                <label for="liveScrubber">Timeline Scrubber</label>
+                <input id="liveScrubber" type="range" min="0" max="30" value="0" />
+                <p id="liveTimeLabel">Current frame time: 0.0s</p>
+              </div>
+              <div class="panel">
+                <h3>Create Match / Load Video</h3>
+                <label for="matchId">Match ID</label>
+                <input id="matchId" type="text" value="match-demo-001" />
+                <label for="videoSource">Video Source</label>
+                <select id="videoSource">
+                  <option value="upload" selected>Upload</option>
+                  <option value="live">Live Stream</option>
+                </select>
+                <button id="saveMatchBtn">Create / Load Match</button>
+              </div>
+              <div class="panel">
+                <h3>Review Actions</h3>
+                <label for="eventTs">Event timestamp (sec)</label>
+                <input id="eventTs" type="number" min="0" step="0.1" value="125.4" />
+                <label for="frameTs">Offside frame timestamp (sec)</label>
+                <input id="frameTs" type="number" min="0" step="0.1" value="126.8" />
+                <div class="row">
+                  <button id="offsideBtn">Offside Check</button>
+                  <button id="goalBtn">Goal Check</button>
+                  <button id="autoGoalBtn" class="secondary">Auto Goal</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="screen-incidents" class="screen hidden">
+            <div class="panel">
+              <h3>Clips & Incidents</h3>
+              <div class="row">
+                <button id="filterAllBtn" class="secondary">All</button>
+                <button id="filterOffsideBtn" class="secondary">Offside</button>
+                <button id="filterGoalBtn" class="secondary">Goal</button>
+              </div>
+              <ul id="incidentList" class="incident-list"></ul>
+            </div>
+          </section>
+
+          <section id="screen-incident-detail" class="screen hidden">
+            <div class="panel">
+              <h3>Incident Detail</h3>
+              <div id="detail">Select an incident in Clips & Incidents.</div>
+            </div>
+          </section>
+
+          <section id="screen-team-list" class="screen hidden">
+            <div class="panel">
+              <h3>Team Management (Admin)</h3>
+              <table class="table">
+                <thead><tr><th>Team</th><th>League</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>North End</td><td>Metro Amateur</td><td>Active</td></tr>
+                  <tr><td>Riverside FC</td><td>Metro Amateur</td><td>Active</td></tr>
+                  <tr><td>Harbor SC</td><td>Coastal Cup</td><td>Inactive</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="screen-leagues" class="screen hidden">
+            <div class="panel">
+              <h3>Leagues Management (Admin)</h3>
+              <table class="table">
+                <thead><tr><th>League</th><th>Season</th><th>Teams</th></tr></thead>
+                <tbody>
+                  <tr><td>Metro Amateur</td><td>2026</td><td>20</td></tr>
+                  <tr><td>Coastal Cup</td><td>2026</td><td>12</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script src="./app.js"></script>
+  </body>
+</html>
