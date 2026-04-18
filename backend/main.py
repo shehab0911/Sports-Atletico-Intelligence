@@ -5,8 +5,10 @@ from datetime import datetime, timezone
 from typing import Literal, Optional
 from uuid import uuid4
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from moviepy.video.io.VideoFileClip import VideoFileClip
 from pydantic import BaseModel, Field
 
 
@@ -26,6 +28,12 @@ ALLOWED_ROLES = {"league_admin", "match_official", "team_viewer"}
 TERMINAL_STATUSES = {"completed", "flagged_for_human_review"}
 ACTIVE_STATUSES = {"queued", "extracting_clip", "awaiting_frame_selection", "ai_analyzing"}
 DATA_PATH = Path(__file__).with_name("data_store.json")
+STORAGE_PATH = Path(__file__).with_name("storage")
+SOURCE_PATH = STORAGE_PATH / "source"
+CLIPS_PATH = STORAGE_PATH / "clips"
+STORAGE_PATH.mkdir(exist_ok=True)
+SOURCE_PATH.mkdir(parents=True, exist_ok=True)
+CLIPS_PATH.mkdir(parents=True, exist_ok=True)
 
 
 def _load_data() -> None:
@@ -47,6 +55,7 @@ def _persist_data() -> None:
 
 
 _load_data()
+app.mount("/storage", StaticFiles(directory=str(STORAGE_PATH)), name="storage")
 
 
 class MockLogin(BaseModel):
@@ -171,6 +180,48 @@ def _require_match_access(match_id: str, team_id: str) -> dict:
     return match
 
 
+def _get_source_file(match: dict) -> Optional[Path]:
+    if match.get("source_type") != "upload":
+        return None
+    file_name = match.get("source_file_name")
+    if not file_name:
+        return None
+    path = SOURCE_PATH / file_name
+    return path if path.exists() else None
+
+
+def _build_clip_url(incident_id: str) -> str:
+    return f"/storage/clips/{incident_id}.mp4"
+
+
+def _extract_clip_for_incident(match: dict, incident: dict) -> None:
+    source_file = _get_source_file(match)
+    if not source_file:
+        return
+
+    clip_path = CLIPS_PATH / f"{incident['id']}.mp4"
+    clip_start, clip_end = incident["clip_window_sec"]
+    try:
+        with VideoFileClip(str(source_file)) as video:
+            clip_end = min(clip_end, video.duration)
+            if clip_start >= clip_end:
+                return
+            clip = video.subclip(clip_start, clip_end)
+            temp_audio = CLIPS_PATH / f"{incident['id']}_audio.m4a"
+            clip.write_videofile(
+                str(clip_path),
+                codec="libx264",
+                audio_codec="aac",
+                temp_audiofile=str(temp_audio),
+                remove_temp=True,
+                verbose=False,
+                logger=None,
+            )
+        incident["clip_url"] = _build_clip_url(incident["id"])
+    except Exception as exc:
+        print(f"Clip extraction failed for {incident['id']}: {exc}")
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "service": "atletico-prototype-api"}
@@ -223,6 +274,10 @@ def create_incident(
     same_match = [i for i in INCIDENTS.values() if i["match_id"] == match_id and i["team_id"] == team_id]
     for item in same_match:
         _advance_incident_state(item)
+    match = MATCHES[match_id]
+    if match["source_type"] == "upload" and not match.get("source_file_name"):
+        raise HTTPException(status_code=400, detail="Uploaded source video is required before creating incidents")
+
     if any(item["status"] in ACTIVE_STATUSES for item in same_match):
         raise HTTPException(status_code=409, detail="Another review is currently in progress for this match")
 
@@ -243,7 +298,7 @@ def create_incident(
         "confidence": 0.0,
         "visual_type": "3d_offside_diagram" if payload.type == "offside" else "goal_line_overlay",
         "clip_window_sec": [round(clip_start, 2), round(clip_end, 2)],
-        "clip_url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+        "clip_url": _build_clip_url(incident_id) if match["source_type"] == "upload" else "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
         "snapshot_url": f"/mock-snapshots/{incident_id}.jpg",
         "clip_deleted": False,
         "note": "",
@@ -260,10 +315,40 @@ def create_incident(
         incident["pending_verdict"] = verdict
         incident["pending_confidence"] = confidence
 
+    if match["source_type"] == "upload":
+        _extract_clip_for_incident(match, incident)
+
     INCIDENTS[incident_id] = incident
     _advance_incident_state(incident)
     _persist_data()
     return incident
+
+
+@app.post("/api/matches/{match_id}/source")
+async def upload_match_source(
+    match_id: str,
+    file: UploadFile = File(...),
+    x_role: str | None = Header(default=None),
+    x_team_id: str | None = Header(default=None),
+) -> dict:
+    _require_role(x_role, {"league_admin", "match_official"})
+    team_id = _require_team(x_team_id)
+    match = _require_match_access(match_id, team_id)
+    if match["source_type"] != "upload":
+        raise HTTPException(status_code=400, detail="Match source is not upload")
+
+    upload_name = f"{match_id}_{file.filename}"
+    dest = SOURCE_PATH / upload_name
+    contents = await file.read()
+    dest.write_bytes(contents)
+    match["source_file_name"] = upload_name
+    match["source_label"] = file.filename
+    _persist_data()
+    return {
+        "message": "Uploaded match source.",
+        "source_file": upload_name,
+        "source_url": f"/storage/source/{upload_name}",
+    }
 
 
 @app.post("/api/matches/{match_id}/goal-auto-detect")

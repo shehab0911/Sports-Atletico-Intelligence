@@ -1,4 +1,8 @@
-const API_BASE = "https://prototype-test-production.up.railway.app";
+const API_BASE =
+  window.location.hostname === "127.0.0.1" ||
+  window.location.hostname === "localhost"
+    ? "http://127.0.0.1:8000"
+    : "https://prototype-test-production.up.railway.app";
 const ACTIVE_STATUSES = new Set([
   "queued",
   "extracting_clip",
@@ -22,6 +26,9 @@ const matchInfo = document.getElementById("matchInfo");
 
 const matchIdInput = document.getElementById("matchId");
 const videoSourceInput = document.getElementById("videoSource");
+const videoFileInput = document.getElementById("videoFile");
+const uploadVideoBtn = document.getElementById("uploadVideoBtn");
+const uploadStatus = document.getElementById("uploadStatus");
 const saveMatchBtn = document.getElementById("saveMatchBtn");
 const eventTsInput = document.getElementById("eventTs");
 const frameTsInput = document.getElementById("frameTs");
@@ -81,6 +88,7 @@ const label = {
 
 loginBtn.addEventListener("click", login);
 saveMatchBtn.addEventListener("click", saveMatch);
+uploadVideoBtn.addEventListener("click", uploadMatchVideo);
 offsideBtn.addEventListener("click", () => createIncident("offside"));
 goalBtn.addEventListener("click", () => createIncident("goal"));
 autoGoalBtn.addEventListener("click", autoDetectGoal);
@@ -160,6 +168,35 @@ async function saveMatch() {
   });
   matchInfo.textContent = `${payload.id} (${payload.source_type})`;
   renderHistory();
+}
+
+async function uploadMatchVideo() {
+  if (!canEdit()) return;
+  if (!videoFileInput.files.length) {
+    alert("Select a video file to upload.");
+    return;
+  }
+
+  const form = new FormData();
+  form.append("file", videoFileInput.files[0]);
+
+  const res = await fetch(`${API_BASE}/api/matches/${getMatchId()}/source`, {
+    method: "POST",
+    headers: {
+      "X-Role": currentRole || "",
+      "X-Team-Id": currentTeamId || "",
+    },
+    body: form,
+  });
+
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({}));
+    throw new Error(payload.detail || "Video upload failed");
+  }
+
+  const payload = await res.json();
+  uploadStatus.textContent = `Uploaded ${payload.source_file}`;
+  await refreshIncidents();
 }
 
 async function createIncident(type) {
@@ -376,15 +413,25 @@ function startPolling() {
 }
 
 async function request(path, method = "GET", body) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const headers = {
+    "X-Role": currentRole || "",
+    "X-Team-Id": currentTeamId || "",
+  };
+  const options = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Role": currentRole || "",
-      "X-Team-Id": currentTeamId || "",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+    headers,
+  };
+
+  if (body) {
+    if (body instanceof FormData) {
+      options.body = body;
+    } else {
+      headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(body);
+    }
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, options);
   if (!res.ok) {
     const payload = await res.json().catch(() => ({}));
     throw new Error(payload.detail || "Request failed");
