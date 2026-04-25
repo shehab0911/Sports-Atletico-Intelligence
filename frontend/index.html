@@ -3,13 +3,99 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Atletico Intelligence Prototype</title>
+    <title>Atlético Intelligence — AI-Powered Soccer Incident Review</title>
+    <meta name="description" content="Instant AI review for offside and goal-line decisions. Built for small and semi-pro leagues using single-camera setups." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div id="loginOverlay" class="overlay">
+
+    <!-- ============ LANDING PAGE ============ -->
+    <div id="landingPage" class="landing-page">
+      <nav class="landing-nav">
+        <a href="#" class="brand-link">Atlético Intelligence™</a>
+        <div class="landing-nav-links">
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#about">About</a>
+          <a href="#" id="landingSignIn" style="color:var(--text-secondary)">Sign in</a>
+          <button id="landingOpenConsole" style="padding:8px 20px;font-size:0.85rem;border-radius:var(--radius-md);">Open console</button>
+        </div>
+      </nav>
+
+      <section class="landing-hero">
+        <div class="hero-badge">Single-Camera VAR Alternative</div>
+        <h1>Instant AI review for offside <span class="gradient-text">and goal-line</span> decisions.</h1>
+        <p class="hero-desc">AI analyzes your existing one-camera feed, builds a short incident clip, returns a verdict, and shows positional evidence — built for small and semi-pro leagues that cannot afford traditional VAR.</p>
+        <div class="hero-buttons">
+          <button id="heroGetStarted" style="padding:12px 28px;font-size:0.95rem;">Get Started</button>
+          <button class="btn-watch" id="heroWatchDemo">▶ Watch Demo</button>
+        </div>
+      </section>
+
+      <section class="landing-features" id="features">
+        <div class="feature-card">
+          <div class="feature-icon">📹</div>
+          <h3>Single Camera Feed</h3>
+          <p>Works perfectly with your existing RTMP or HLS live stream. No expensive multi-camera rigs required.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Real-time Processing</h3>
+          <p>Get instant incident clips in 5-15 seconds, generated immediately after the official triggers a review.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">☁️</div>
+          <h3>Cloud Incident Archive</h3>
+          <p>Secure storage for match clips. Full matches aren't stored, only the crucial moments you need.</p>
+        </div>
+      </section>
+
+      <section class="landing-mvp" id="pricing">
+        <h2>MVP Focus</h2>
+        <p>Offside review with frame lock and 3D positional diagrams, goal-line review with virtual barrier. Foul review is out of scope for the first release.</p>
+        <div class="mvp-grid">
+          <div class="mvp-card">
+            <div class="mvp-badge" style="background:rgba(16,185,129,0.15);color:var(--accent-primary);">OS</div>
+            <div class="mvp-icon" style="background:rgba(16,185,129,0.1);color:var(--accent-primary);border-radius:var(--radius-md);">📐</div>
+            <h3>Offside Analysis</h3>
+            <p>Scrub to the pass, freeze the frame, AI verdict with last defender vs attacker visualization.</p>
+          </div>
+          <div class="mvp-card">
+            <div class="mvp-badge" style="background:rgba(124,58,237,0.15);color:var(--accent-purple-hover);">GL</div>
+            <div class="mvp-icon" style="background:rgba(124,58,237,0.1);color:var(--accent-purple-hover);border-radius:var(--radius-md);">❓</div>
+            <h3>Goal-Line Technology</h3>
+            <p>Ball crossing the line fully — goal or no goal with supporting high-resolution snapshots.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-cta" id="about">
+        <h2>Built for referees and teams</h2>
+        <p>Large console controls for live matches, incident history after the final whistle, and role-based access when you scale.</p>
+        <div class="cta-buttons">
+          <button id="ctaGetStarted" style="padding:12px 28px;">Get started</button>
+          <button class="secondary" style="padding:12px 28px;">Contact Sales</button>
+        </div>
+      </section>
+
+      <footer class="landing-footer">
+        <span>© Atlético Intelligence</span>
+        <div class="footer-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Support</a>
+        </div>
+        <span>© 2025 Atlético Intelligence. All rights reserved.</span>
+      </footer>
+    </div>
+
+    <!-- ============ LOGIN OVERLAY ============ -->
+    <div id="loginOverlay" class="overlay hidden">
       <div class="auth-card">
-        <h1>Atletico Intelligence</h1>
+        <h1>Atlético Intelligence</h1>
         <p>Sign in to match review console</p>
         <label for="roleSelect">Select Role</label>
         <select id="roleSelect">
@@ -17,53 +103,68 @@
           <option value="match_official" selected>Match Official</option>
           <option value="team_viewer">Team Viewer</option>
         </select>
-        <button id="loginBtn">Sign in to Console</button>
+        <label for="teamIdInput">Team ID</label>
+        <input id="teamIdInput" type="text" value="team-demo-001" placeholder="team-demo-001" />
+        <button id="loginBtn" style="width:100%;margin-top:20px;padding:12px;">Sign in to Console</button>
       </div>
     </div>
 
-    <div class="app-shell">
+    <!-- ============ APP SHELL ============ -->
+    <div id="appShell" class="app-shell hidden">
       <aside class="sidebar">
-        <div class="brand">Atletico Intelligence</div>
+        <div class="brand">Atlético Intelligence</div>
         <div id="sessionInfo" class="session">Not logged in</div>
+        <div id="sessionRoleLabel" class="session-role-label"></div>
         <nav id="navList" class="nav-list"></nav>
+        <div class="sidebar-footer">
+          <button id="signOutBtn" class="btn-ghost">↩ Sign Out</button>
+        </div>
       </aside>
 
       <div class="main-pane">
         <header class="topbar">
-          <h2 id="pageTitle">Dashboard</h2>
+          <div>
+            <h2 id="pageTitle">Dashboard</h2>
+            <div id="pageSubtitle" class="topbar-subtitle"></div>
+          </div>
           <div class="top-actions">
-            <span id="matchInfo">Match not initialized.</span>
+            <span id="matchInfo"></span>
+            <a href="#">Wireframes</a>
+            <a href="#">Site home</a>
           </div>
         </header>
 
         <main id="screenContainer" class="screen-container">
+
+          <!-- ===== TEAM VIEWER DASHBOARD ===== -->
           <section id="screen-dashboard" class="screen">
-            <div class="cards3">
-              <div class="card">
-                <h3>Matches with clips</h3>
-                <p id="kpiMatches">0</p>
-              </div>
-              <div class="card">
-                <h3>Available incidents</h3>
-                <p id="kpiIncidents">0</p>
-              </div>
-              <div class="card">
-                <h3>Open reviews</h3>
-                <p id="kpiOpen">0</p>
-              </div>
+            <div id="dashWelcome" class="welcome-section"></div>
+            <div id="dashStats" class="stats-grid"></div>
+            <div class="cards2-wide">
+              <div id="dashRecentMatches" class="panel"></div>
+              <div id="dashQuickLinks" class="panel"></div>
             </div>
           </section>
 
+          <!-- ===== MATCH HISTORY ===== -->
           <section id="screen-match-history" class="screen hidden">
             <div class="panel">
-              <h3>Match history</h3>
+              <div class="panel-header">
+                <h3>Match History</h3>
+                <div class="row" style="gap:8px">
+                  <input type="text" placeholder="Search matches..." style="max-width:200px;" />
+                  <select style="max-width:140px;"><option>All Types</option><option>Offside</option><option>Goal</option></select>
+                </div>
+              </div>
               <table class="table">
                 <thead>
                   <tr>
                     <th>Date</th>
                     <th>Fixture</th>
                     <th>Status</th>
-                    <th>Clips</th>
+                    <th>Incidents</th>
+                    <th>Offside</th>
+                    <th>Goal</th>
                   </tr>
                 </thead>
                 <tbody id="historyTable"></tbody>
@@ -71,150 +172,173 @@
             </div>
           </section>
 
+          <!-- ===== LIVE CONSOLE ===== -->
           <section id="screen-live-console" class="screen hidden">
             <div class="cards2">
               <div class="panel">
-                <h3>Live Video Preview</h3>
-                <video id="livePreviewVideo" controls width="100%">
-                  <source
-                    src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-                    type="video/mp4"
-                  />
-                </video>
-                <label for="liveScrubber">Timeline Scrubber</label>
-                <input
-                  id="liveScrubber"
-                  type="range"
-                  min="0"
-                  max="30"
-                  value="0"
-                />
-                <p id="liveTimeLabel">Current frame time: 0.0s</p>
+                <h3 style="margin-bottom:12px;">Live Video Preview</h3>
+                <div class="video-container">
+                  <video id="livePreviewVideo" controls>
+                    <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
+                  </video>
+                </div>
+                <div style="margin-top:12px;">
+                  <label for="liveScrubber">Timeline Scrubber</label>
+                  <input id="liveScrubber" type="range" min="0" max="30" value="0" />
+                  <p id="liveTimeLabel" style="font-size:0.82rem;color:var(--text-muted);">Current frame time: 0.0s</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                  <span style="font-size:0.78rem;color:var(--text-muted);">Connection:</span>
+                  <span class="badge badge-active">● Connected</span>
+                </div>
               </div>
-              <div class="panel">
-                <h3>Create Match / Load Video</h3>
-                <label for="matchId">Match ID</label>
-                <input id="matchId" type="text" value="match-demo-001" />
-                <label for="videoSource">Video Source</label>
-                <select id="videoSource">
-                  <option value="upload" selected>Upload</option>
-                  <option value="live">Live Stream</option>
-                </select>
-                <button id="saveMatchBtn">Create / Load Match</button>
-                <label for="videoFile">Upload Match Video</label>
-                <input id="videoFile" type="file" accept="video/mp4,video/*" />
-                <button id="uploadVideoBtn">Upload Video</button>
-                <p id="uploadStatus">
-                  Select a local MP4 file and press Upload.
-                </p>
-              </div>
-              <div class="panel">
-                <h3>Review Actions</h3>
-                <label for="eventTs">Event timestamp (sec)</label>
-                <input
-                  id="eventTs"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value="125.4"
-                />
-                <label for="frameTs">Offside frame timestamp (sec)</label>
-                <input
-                  id="frameTs"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value="126.8"
-                />
-                <div class="row">
-                  <button id="offsideBtn">Offside Check</button>
-                  <button id="goalBtn">Goal Check</button>
-                  <button id="autoGoalBtn" class="secondary">Auto Goal</button>
+              <div style="display:flex;flex-direction:column;gap:16px;">
+                <div class="panel">
+                  <h3 style="margin-bottom:12px;">Match Setup</h3>
+                  <label for="matchId">Match ID</label>
+                  <input id="matchId" type="text" value="match-demo-001" />
+                  <label for="videoSource">Video Source</label>
+                  <select id="videoSource">
+                    <option value="upload" selected>Upload</option>
+                    <option value="live">Live Stream</option>
+                  </select>
+                  <button id="saveMatchBtn" style="width:100%;margin-top:14px;">Create / Load Match</button>
+                  <label for="videoFile">Upload Match Video</label>
+                  <input id="videoFile" type="file" accept="video/mp4,video/*" />
+                  <button id="uploadVideoBtn" class="secondary" style="width:100%;margin-top:8px;">Upload Video</button>
+                  <p id="uploadStatus" style="font-size:0.8rem;color:var(--text-muted);margin-top:8px;">Select a local MP4 file and press Upload.</p>
+                </div>
+                <div class="panel">
+                  <h3 style="margin-bottom:12px;">Review Actions</h3>
+                  <label for="eventTs">Event timestamp (sec)</label>
+                  <input id="eventTs" type="number" min="0" step="0.1" value="125.4" />
+                  <label for="frameTs">Offside frame timestamp (sec)</label>
+                  <input id="frameTs" type="number" min="0" step="0.1" value="126.8" />
+                  <div class="btn-group" style="margin-top:14px;">
+                    <button id="offsideBtn" style="flex:1;">⚑ Offside Check</button>
+                    <button id="goalBtn" style="flex:1;">⚽ Goal Check</button>
+                  </div>
+                  <button id="autoGoalBtn" class="secondary" style="width:100%;margin-top:8px;">Auto Goal Detect</button>
                 </div>
               </div>
             </div>
           </section>
 
+          <!-- ===== CLIPS & INCIDENTS ===== -->
           <section id="screen-incidents" class="screen hidden">
             <div class="panel">
-              <h3>Clips & Incidents</h3>
-              <div class="row">
-                <button id="filterAllBtn" class="secondary">All</button>
-                <button id="filterOffsideBtn" class="secondary">Offside</button>
-                <button id="filterGoalBtn" class="secondary">Goal</button>
+              <div class="panel-header">
+                <h3>Clips & Incidents</h3>
+                <div class="filter-group" style="margin-bottom:0;">
+                  <button id="filterAllBtn" class="filter-btn active">All</button>
+                  <button id="filterOffsideBtn" class="filter-btn">Offside</button>
+                  <button id="filterGoalBtn" class="filter-btn">Goal</button>
+                </div>
               </div>
               <ul id="incidentList" class="incident-list"></ul>
+              <div id="incidentListEmpty" style="text-align:center;padding:40px 0;color:var(--text-muted);display:none;">
+                <p style="font-size:1.2rem;margin-bottom:8px;">No incidents yet</p>
+                <p style="font-size:0.85rem;">Trigger an Offside Check or Goal Check from the Live Console.</p>
+              </div>
             </div>
           </section>
 
+          <!-- ===== INCIDENT DETAIL ===== -->
           <section id="screen-incident-detail" class="screen hidden">
-            <div class="panel">
-              <h3>Incident Detail</h3>
-              <div id="detail">Select an incident in Clips & Incidents.</div>
-            </div>
+            <div id="detail">Select an incident from Clips & Incidents.</div>
           </section>
 
+          <!-- ===== LEAGUES (Admin) ===== -->
+          <section id="screen-leagues" class="screen hidden">
+            <div class="panel">
+              <div class="panel-header">
+                <h3>All Leagues (12)</h3>
+                <div class="row" style="gap:8px;">
+                  <span style="font-size:0.82rem;color:var(--text-muted);">Season:</span>
+                  <select style="max-width:100px;padding:6px 10px;"><option>All</option><option>2024</option><option>2023</option></select>
+                  <span style="font-size:0.82rem;color:var(--text-muted);">Status:</span>
+                  <select style="max-width:100px;padding:6px 10px;"><option>All</option><option>Active</option><option>Draft</option><option>Archived</option></select>
+                  <span style="font-size:0.82rem;color:var(--text-muted);">Sort by:</span>
+                  <select style="max-width:100px;padding:6px 10px;"><option>Name</option><option>Season</option><option>Teams</option></select>
+                  <button class="btn-outline" style="margin-left:auto;">Bulk Archive</button>
+                </div>
+              </div>
+              <div class="row-between" style="margin-bottom:8px;">
+                <div class="checkbox" style="margin-left:16px;"></div>
+                <span style="font-size:0.8rem;color:var(--text-muted);margin-left:auto;">☐ Select All</span>
+              </div>
+              <table class="table" id="leaguesTable">
+                <thead>
+                  <tr>
+                    <th style="width:30px;"></th>
+                    <th>League Name</th>
+                    <th>Season</th>
+                    <th>Teams</th>
+                    <th>Matches</th>
+                    <th>Last Activity</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="leaguesTableBody"></tbody>
+              </table>
+              <div class="pagination">
+                <span class="pagination-info">Showing 6 of 12 leagues</span>
+                <div class="pagination-buttons">
+                  <button class="page-btn">‹</button>
+                  <button class="page-btn active">1</button>
+                  <button class="page-btn">2</button>
+                  <button class="page-btn">›</button>
+                </div>
+              </div>
+            </div>
+            <div id="leagueStatsBar" class="stats-bar"></div>
+          </section>
+
+          <!-- ===== TEAM LIST (Admin) ===== -->
           <section id="screen-team-list" class="screen hidden">
             <div class="panel">
-              <h3>Team Management (Admin)</h3>
+              <div class="panel-header">
+                <h3>Team Management</h3>
+                <div class="row" style="gap:8px;">
+                  <div class="search-bar">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Search teams..." style="max-width:200px;" />
+                  </div>
+                  <button>+ New Team</button>
+                </div>
+              </div>
               <table class="table">
                 <thead>
                   <tr>
                     <th>Team</th>
                     <th>League</th>
+                    <th>Players</th>
+                    <th>Contact</th>
                     <th>Status</th>
+                    <th>Last Match</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>North End</td>
-                    <td>Metro Amateur</td>
-                    <td>Active</td>
-                  </tr>
-                  <tr>
-                    <td>Riverside FC</td>
-                    <td>Metro Amateur</td>
-                    <td>Active</td>
-                  </tr>
-                  <tr>
-                    <td>Harbor SC</td>
-                    <td>Coastal Cup</td>
-                    <td>Inactive</td>
-                  </tr>
-                </tbody>
+                <tbody id="teamListBody"></tbody>
               </table>
             </div>
           </section>
 
-          <section id="screen-leagues" class="screen hidden">
-            <div class="panel">
-              <h3>Leagues Management (Admin)</h3>
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>League</th>
-                    <th>Season</th>
-                    <th>Teams</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Metro Amateur</td>
-                    <td>2026</td>
-                    <td>20</td>
-                  </tr>
-                  <tr>
-                    <td>Coastal Cup</td>
-                    <td>2026</td>
-                    <td>12</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <!-- ===== LEAGUE DETAIL FORM (Admin) ===== -->
+          <section id="screen-league-detail" class="screen hidden">
+            <div id="leagueDetailContent"></div>
           </section>
+
+          <!-- ===== MATCH DETAIL / OFFICIAL DETAIL (Admin) ===== -->
+          <section id="screen-official-detail" class="screen hidden">
+            <div id="officialDetailContent"></div>
+          </section>
+
         </main>
       </div>
     </div>
+
     <script src="./app.js"></script>
   </body>
 </html>

@@ -1,0 +1,83 @@
+{
+  "incidents": {
+    "9d5bf31c-9a2c-40bc-b339-1fe47b32ed0b": {
+      "id": "9d5bf31c-9a2c-40bc-b339-1fe47b32ed0b",
+      "match_id": "match-demo-001",
+      "team_id": "team-demo-001",
+      "type": "offside",
+      "status": "completed",
+      "event_ts": 125.4,
+      "frame_ts": 126.8,
+      "verdict": "Offside",
+      "confidence": 0.92,
+      "visual_type": "3d_offside_diagram",
+      "clip_window_sec": [
+        120.4,
+        130.4
+      ],
+      "clip_url": "/storage/clips/9d5bf31c-9a2c-40bc-b339-1fe47b32ed0b.mp4",
+      "snapshot_url": "/storage/snapshots/9d5bf31c-9a2c-40bc-b339-1fe47b32ed0b.jpg",
+      "clip_deleted": false,
+      "note": "",
+      "created_at": "2026-04-25T16:08:08.884031+00:00",
+      "created_at_ts": 1777133288.8845494,
+      "frame_reviewed_at_ts": 1777133319.1434696,
+      "pending_verdict": "Offside",
+      "pending_confidence": 0.92,
+      "processing_history": [
+        {
+          "status": "queued",
+          "at": "2026-04-25T16:08:08.884031+00:00"
+        },
+        {
+          "status": "awaiting_frame_selection",
+          "at": "2026-04-25T16:08:35.004728+00:00"
+        },
+        {
+          "status": "ai_analyzing",
+          "at": "2026-04-25T16:08:39.143469+00:00"
+        },
+        {
+          "status": "completed",
+          "at": "2026-04-25T16:08:41.667630+00:00"
+        },
+        {
+          "status": "overridden_by_admin",
+          "at": "2026-04-25T16:55:59.655364+00:00"
+        },
+        {
+          "status": "completed",
+          "at": "2026-04-25T16:55:59.750455+00:00"
+        }
+      ],
+      "admin_note": "Overriding to Onside for testing purposes."
+    }
+  },
+  "matches": {
+    "match-demo-001": {
+      "id": "match-demo-001",
+      "team_id": "team-demo-001",
+      "source_type": "upload",
+      "source_label": "uploaded_video.mp4",
+      "status": "active",
+      "updated_at": "2026-04-25T16:54:57.139144+00:00",
+      "incident_count": 1,
+      "offside_count": 1,
+      "goal_count": 0
+    },
+    "match-test-002": {
+      "id": "match-test-002",
+      "team_id": "team-demo-001",
+      "source_type": "upload",
+      "source_label": "uploaded_video.mp4",
+      "status": "active",
+      "updated_at": "2026-04-25T16:47:40.628758+00:00",
+      "incident_count": 0,
+      "offside_count": 0,
+      "goal_count": 0
+    }
+  },
+  "leagues": {},
+  "teams": {},
+  "users": {}
+}

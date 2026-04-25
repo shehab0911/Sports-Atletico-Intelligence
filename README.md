@@ -93,4 +93,25 @@ docker compose down
 - Live stream ingest, CV model inference, and real 3D rendering are represented as simulated steps in this prototype.
 - Full production behavior is documented in `TECHNICAL_SCOPE_AND_PLAN.md`.
 
+## System Architecture / User Flow
 
+```mermaid
+flowchart TD
+
+A([Login]) --> B[Create Match]
+B --> C[Load Video<br/>Upload or Live Stream]
+C --> D[Match Console]
+D --> E{Review Button}
+
+E -->|Offside Check| F[Extract Clip<br/>5–15 sec]
+E -->|Goal Check| G[Extract Clip<br/>5–15 sec]
+
+F --> H[AI Verdict<br/>Offside / Onside + 3D Diagram]
+G --> I[AI Verdict<br/>Goal / No Goal]
+
+H --> J[Incident Logged]
+I --> J
+
+J --> K[Add Referee Note]
+K --> L([Team Views<br/>Incident List])
+```

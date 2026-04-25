@@ -25,6 +25,9 @@ app.add_middleware(
 BAD_WORDS = {"damn", "idiot", "stupid"}
 INCIDENTS: dict[str, dict] = {}
 MATCHES: dict[str, dict] = {}
+LEAGUES: dict[str, dict] = {}
+TEAMS: dict[str, dict] = {}
+USERS: dict[str, dict] = {}
 ALLOWED_ROLES = {"league_admin", "match_official", "team_viewer"}
 TERMINAL_STATUSES = {"completed", "flagged_for_human_review"}
 ACTIVE_STATUSES = {"queued", "extracting_clip", "awaiting_frame_selection", "ai_analyzing"}
@@ -48,11 +51,14 @@ def _load_data() -> None:
         return
     INCIDENTS.update(payload.get("incidents", {}))
     MATCHES.update(payload.get("matches", {}))
+    LEAGUES.update(payload.get("leagues", {}))
+    TEAMS.update(payload.get("teams", {}))
+    USERS.update(payload.get("users", {}))
 
 
 def _persist_data() -> None:
     DATA_PATH.write_text(
-        json.dumps({"incidents": INCIDENTS, "matches": MATCHES}, ensure_ascii=True, indent=2),
+        json.dumps({"incidents": INCIDENTS, "matches": MATCHES, "leagues": LEAGUES, "teams": TEAMS, "users": USERS}, ensure_ascii=True, indent=2),
         encoding="utf-8",
     )
 
@@ -82,6 +88,34 @@ class FrameReview(BaseModel):
 
 class NoteUpdate(BaseModel):
     note: str = Field(max_length=300)
+
+class LeagueCreate(BaseModel):
+    name: str
+    season: str
+    start_date: str
+    end_date: str
+    description: str = ""
+    status: Literal["Active", "Draft", "Archived"] = "Active"
+    max_teams: int = 20
+
+class TeamCreate(BaseModel):
+    name: str
+    league_id: str
+    players: int = 0
+    contact: str = ""
+    status: Literal["Active", "Inactive", "Suspended"] = "Active"
+
+class UserCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    role: Literal["league_admin", "match_official", "team_viewer"]
+    team_id: Optional[str] = None
+
+class ModerateIncident(BaseModel):
+    action: Literal["override", "flag", "archive"]
+    new_verdict: Optional[str] = None
+    note: Optional[str] = None
 
 
 def _analyze_video_for_verdict(match: dict, incident: dict) -> dict:
@@ -545,6 +579,88 @@ def review_offside_frame(
     # Use analyzing first and let polling finalize the result.
     _set_status(incident, "ai_analyzing")
     _advance_incident_state(incident)
+    _persist_data()
+    return incident
+
+
+@app.get("/api/matches")
+def list_matches(x_role: str | None = Header(default=None), x_team_id: str | None = Header(default=None)) -> list[dict]:
+    role = _validate_role(x_role)
+    team_id = _require_team(x_team_id)
+    if role == "league_admin":
+        items = list(MATCHES.values())
+    else:
+        items = [m for m in MATCHES.values() if m.get("team_id") == team_id]
+    
+    for m in items:
+        m_incidents = [i for i in INCIDENTS.values() if i["match_id"] == m["id"]]
+        m["incident_count"] = len(m_incidents)
+        m["offside_count"] = len([i for i in m_incidents if i["type"] == "offside"])
+        m["goal_count"] = len([i for i in m_incidents if i["type"] == "goal"])
+    return sorted(items, key=lambda m: m["updated_at"], reverse=True)
+
+
+@app.get("/api/leagues")
+def list_leagues(x_role: str | None = Header(default=None)) -> list[dict]:
+    _require_role(x_role, {"league_admin"})
+    return list(LEAGUES.values())
+
+
+@app.post("/api/leagues")
+def create_league(payload: LeagueCreate, x_role: str | None = Header(default=None)) -> dict:
+    _require_role(x_role, {"league_admin"})
+    l_id = str(uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    league = {"id": l_id, "created_at": now, **payload.model_dump()}
+    LEAGUES[l_id] = league
+    _persist_data()
+    return league
+
+
+@app.get("/api/teams")
+def list_teams(x_role: str | None = Header(default=None)) -> list[dict]:
+    _require_role(x_role, {"league_admin"})
+    items = list(TEAMS.values())
+    for t in items:
+        league = LEAGUES.get(t["league_id"])
+        t["league_name"] = league["name"] if league else "Unknown"
+    return items
+
+
+@app.post("/api/teams")
+def create_team(payload: TeamCreate, x_role: str | None = Header(default=None)) -> dict:
+    _require_role(x_role, {"league_admin"})
+    t_id = str(uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    team = {"id": t_id, "created_at": now, **payload.model_dump()}
+    TEAMS[t_id] = team
+    _persist_data()
+    return team
+
+
+@app.post("/api/incidents/{incident_id}/moderate")
+def moderate_incident(incident_id: str, payload: ModerateIncident, x_role: str | None = Header(default=None)) -> dict:
+    _require_role(x_role, {"league_admin"})
+    incident = INCIDENTS.get(incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    
+    if payload.action == "override":
+        if not payload.new_verdict:
+            raise HTTPException(status_code=400, detail="new_verdict required for override")
+        incident["verdict"] = payload.new_verdict
+        incident["status"] = "completed"
+        _set_status(incident, "overridden_by_admin")
+    elif payload.action == "flag":
+        incident["status"] = "flagged_for_human_review"
+        _set_status(incident, "flagged_for_human_review")
+    elif payload.action == "archive":
+        incident["status"] = "archived"
+        _set_status(incident, "archived")
+        
+    if payload.note:
+        incident["admin_note"] = payload.note
+        
     _persist_data()
     return incident
 
