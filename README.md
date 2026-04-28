@@ -4,7 +4,7 @@ Incident Review
 ## Project Structure
 
 ```text
-prototype/
+folder_name/
 ├─ docker-compose.yml
 ├─ README.md
 ├─ backend/
